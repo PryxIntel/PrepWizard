@@ -1,0 +1,236 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    String            @id @default(uuid())
+  email                 String            @unique
+  passwordHash          String
+  name                  String
+  targetExam            String            @default("GATE_CS")
+  targetScore           Int               @default(80)
+  dailyStudyGoalMinutes Int               @default(60)
+  role                  String            @default("USER") // USER, ADMIN
+  streakCount           Int               @default(1)
+  lastActiveDate        DateTime          @default(now())
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  testSessions          TestSession[]
+  mistakes              MistakeEntry[]
+  revisionCards         RevisionCard[]
+  bookmarks             Bookmark[]
+  dailyChallenges       DailyChallenge[]
+}
+
+model Exam {
+  id          String        @id @default(uuid())
+  code        String        @unique // GATE_CS, RRB_JE_EE, SSC_JE_EE, RRB_ALP_EE
+  name        String
+  category    String        // Engineering, Railway, Staff Selection
+  description String
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+
+  patterns    ExamPattern[]
+  subjects    Subject[]
+  questions   Question[]
+  sessions    TestSession[]
+}
+
+model ExamPattern {
+  id                     String   @id @default(uuid())
+  examId                 String
+  exam                   Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  title                  String   @default("Official Pattern")
+  durationMinutes        Int
+  totalQuestions         Int
+  defaultNegativeMarking Float    @default(0.33)
+  sectionsJson           String   // JSON string of sections: [{ name, questions, marksPerQ, negativeMarking }]
+  isDefault              Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Subject {
+  id        String    @id @default(uuid())
+  examId    String
+  exam      Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  name      String
+  code      String
+  order     Int       @default(0)
+
+  topics    Topic[]
+  questions Question[]
+}
+
+model Topic {
+  id        String     @id @default(uuid())
+  subjectId String
+  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name      String
+  order     Int        @default(0)
+
+  subtopics Subtopic[]
+  questions Question[]
+}
+
+model Subtopic {
+  id        String     @id @default(uuid())
+  topicId   String
+  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  name      String
+
+  questions Question[]
+}
+
+model Question {
+  id                 String            @id @default(uuid())
+  examId             String
+  exam               Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subjectId          String
+  subject            Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topicId            String
+  topic              Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  subtopicId         String?
+  subtopic           Subtopic?         @relation(fields: [subtopicId], references: [id], onDelete: SetNull)
+
+  year               Int               @default(2024)
+  shift              String?           @default("Shift 1")
+  paper              String?
+  questionType       String            @default("MCQ") // MCQ, MSQ, NAT, ASSERTION_REASON
+  difficulty         String            @default("MEDIUM") // EASY, MEDIUM, HARD
+
+  questionText       String
+  optionsJson        String            @default("[]") // JSON string of [{ id: "A", text: "..." }]
+  correctAnswersJson String            // JSON string: for MCQ ["A"], MSQ ["A","C"], NAT { "min": 4.5, "max": 4.5 } or ["4.5"]
+  
+  marks              Float             @default(1.0)
+  negativeMarks      Float             @default(0.33)
+  avgExpectedSeconds Int               @default(60)
+
+  explanation        String
+  shortcutTrick      String?
+  formulaConcept     String?
+  commonMistake      String?
+
+  isPYQ              Boolean           @default(true)
+  isAIGenerated      Boolean           @default(false)
+  sourceRef          String?
+
+  createdAt          DateTime          @default(now())
+
+  sessionQuestions   SessionQuestion[]
+  mistakes           MistakeEntry[]
+  revisionCards      RevisionCard[]
+  bookmarks          Bookmark[]
+}
+
+model TestSession {
+  id                    String            @id @default(uuid())
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  examId                String
+  exam                  Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  
+  mode                  String            // REAL_EXAM, RAPID_FIRE, TOPIC_PRACTICE, WEAK_AREA, PYQ_MARATHON, MISTAKE_PRACTICE, SPEED_PRACTICE, CUSTOM_TEST
+  title                 String
+  status                String            @default("IN_PROGRESS") // IN_PROGRESS, SUBMITTED, EXPIRED
+  
+  totalDurationSeconds  Int
+  timeRemainingSeconds  Int
+  currentQuestionIndex  Int               @default(0)
+  configJson            String            @default("{}") // JSON: timePerQuestion, allowSkip, etc.
+  
+  score                 Float?
+  maxScore              Float?
+  accuracy              Float?
+  totalAttempted        Int?              @default(0)
+  totalCorrect          Int?              @default(0)
+  totalIncorrect        Int?              @default(0)
+  totalSkipped          Int?              @default(0)
+  
+  startedAt             DateTime          @default(now())
+  endedAt               DateTime?
+
+  sessionQuestions      SessionQuestion[]
+}
+
+model SessionQuestion {
+  id                 String      @id @default(uuid())
+  sessionId          String
+  session            TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId         String
+  question           Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  sequenceOrder      Int
+  sectionName        String      @default("General")
+  status             String      @default("NOT_VISITED") // NOT_VISITED, NOT_ANSWERED, ANSWERED, MARKED_FOR_REVIEW, ANSWERED_AND_MARKED
+  
+  candidateAnswerJson String?    // JSON string e.g. ["A"], ["B","C"], "4.5"
+  isCorrect          Boolean?
+  marksAwarded       Float       @default(0.0)
+  timeTakenSeconds   Int         @default(0)
+  answeredAt         DateTime?
+}
+
+model MistakeEntry {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  userChoice   String?
+  correctChoice String?
+  mistakeType  String    @default("CONCEPTUAL") // CONCEPTUAL, CALCULATION, SILLY, TIME_MANAGEMENT, MISREAD, GUESSING
+  userNotes    String?
+  dateLogged   DateTime  @default(now())
+
+  @@unique([userId, questionId])
+}
+
+model RevisionCard {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  intervalDays   Int       @default(1)
+  repetitions    Int       @default(0)
+  easeFactor     Float     @default(2.5)
+  nextReviewDate DateTime  @default(now())
+  lastReviewedAt DateTime?
+  
+  createdAt      DateTime  @default(now())
+}
+
+model Bookmark {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  category   String   @default("IMPORTANT") // IMPORTANT, REVISE_LATER, DIFFICULT, FORMULA, TRICKY
+  note       String?
+  createdAt  DateTime @default(now())
+}
+
+model DailyChallenge {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeDate      String   // YYYY-MM-DD
+  targetQuestions    Int      @default(25)
+  completedQuestions Int      @default(0)
+  accuracyAchieved   Float    @default(0.0)
+  isCompleted        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+}

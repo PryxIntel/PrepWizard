@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: prepwizard-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: prepwizard
+      POSTGRES_PASSWORD: prepwizard_secure_db_pass
+      POSTGRES_DB: prepwizard_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: prepwizard-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      DATABASE_URL: "postgresql://prepwizard:prepwizard_secure_db_pass@postgres:5432/prepwizard_db?schema=public"
+      JWT_SECRET: "prepwizard_super_secret_jwt_key_2026_exam_platform"
+      CORS_ORIGIN: "http://localhost:5173"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: prepwizard-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
