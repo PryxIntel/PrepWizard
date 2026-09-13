@@ -1,0 +1,14 @@
+{
+  "appId": "com.prepwizard.cbt",
+  "appName": "PrepWizard",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "buildOptions": {
+      "releaseType": "APK"
+    }
+  }
+}
