@@ -1,0 +1,13 @@
+{
+  "name": "prepwizard-root",
+  "version": "1.0.0",
+  "description": "PrepWizard Full-Stack CBT Engineering Exam Preparation Application",
+  "scripts": {
+    "start": "start.bat",
+    "stop": "stop.bat",
+    "test": "npm --prefix backend test"
+  },
+  "keywords": ["gate", "rrb-je", "ssc-je", "rrb-alp", "cbt", "exam-prep"],
+  "author": "PrepWizard Team",
+  "license": "ISC"
+}
