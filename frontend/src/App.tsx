@@ -137,7 +137,7 @@ const MainApp: React.FC = () => {
         <p>PrepWizard Engine © 2026 — Real-Time CBT Simulation for GATE CS, RRB JE, SSC JE & RRB ALP</p>
         <p className="text-[11px] text-slate-500">
           Domain: <span className="text-indigo-400 font-mono">priyanshuchauhan.in</span> •{' '}
-          <a href="https://github.com/PryxIntel/PrepWizard/releases/download/v1.0.0/PrepWizard.apk" download="PrepWizard.apk" className="text-emerald-400 hover:underline font-semibold">
+          <a href="/PrepWizard.apk" download="PrepWizard.apk" className="text-emerald-400 hover:underline font-semibold">
             📱 Download Android APK
           </a>
         </p>

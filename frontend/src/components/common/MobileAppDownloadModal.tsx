@@ -102,12 +102,12 @@ export const MobileAppDownloadModal: React.FC<MobileAppDownloadModalProps> = ({
               </div>
             </div>
             <a
-              href="https://github.com/PryxIntel/PrepWizard/releases/download/v1.0.0/PrepWizard.apk"
+              href="/PrepWizard.apk"
               download="PrepWizard.apk"
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center space-x-2 border border-slate-700 transition-all hover:scale-[1.02]"
             >
               <Download className="w-4 h-4 text-emerald-400" />
-              <span>Download PrepWizard.apk (v1.0.0)</span>
+              <span>Download PrepWizard.apk</span>
             </a>
           </div>
         </div>

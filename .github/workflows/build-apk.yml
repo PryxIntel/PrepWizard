@@ -3,6 +3,8 @@ name: Build PrepWizard Android APK
 on:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - 'frontend/public/PrepWizard.apk'
   workflow_dispatch:
 
 permissions:
@@ -16,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -54,6 +58,15 @@ jobs:
       - name: Prepare APK File
         run: |
           cp frontend/android/app/build/outputs/apk/debug/app-debug.apk PrepWizard.apk
+
+      - name: Commit APK to repository for direct website hosting
+        run: |
+          cp frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/public/PrepWizard.apk
+          git config --global user.name "Pryxintel"
+          git config --global user.email "priyanshu0.dotin@gmail.com"
+          git add frontend/public/PrepWizard.apk
+          git commit -m "add compiled android apk to frontend public downloads" || echo "No changes to commit"
+          git push origin main
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
